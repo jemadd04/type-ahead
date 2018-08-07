@@ -15,14 +15,70 @@
     </ul>
   </form>
 <script>
+  // Cities JSON file
 const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
 
-// Create empty array to put cities into
+// Create empty array to put cities in to
 const cities = [];
 
 // Fetch data using Fetch API
+// Initially returns a promise, which says something will eventually come back from the fetch
+// .then gets rid of the promise and returns a blob of data. The data that comes back doesn't know what kind of data it is yet. That's why we have the blob.json, to convert raw data into json.
+// This returns another promise, so we use another .then to get the json data. We then push the items into cities. This pushes the data into the empty cities array.
+// The three dots before the data indiciates we're spreading into the push method, which gives us an array of a thousand different cities. It's an ES6 method.
+fetch(endpoint)
+  .then(blob => blob.json())
+  .then(data => cities.push(...data))
 
-const prom = fetch(endpoint)
+// Run function and filter through array when someone types in box and convert it to a subset
+// It takes in the cities array because we are passing the data into the function
+function findMatches(wordToMatch, cities) {
+  // The filter chisels the array into a subset
+  return cities.filter(place => {
+    // Figure out if the city or state matches what was searched
+    // Regex allows you to put a variable into a regular expression. RegExp = regular expression. It takes in the word that the person types (wordToMatch) and it takes in flags. G = global, I = insensitive (match lower and uppercase).
+    // place.city refers to the array. We defined place when creating the filer and city is in the array. So when a person searches for a word (wordToMatch) it returns the cities in the array that matches OR the states in the array that matches
+    const regex = new RegExp(wordToMatch, 'gi');
+    return place.city.match(regex) || place.state.match(regex)
+  });
+}
+
+// Create function to add commas to population. It's called later on in the span
+function numberWithCommas(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Create display function for whenever someone changes the value
+function displayMatches() {
+  // matchArray gives us arrays that matches what is typed in
+  const matchArray = findMatches(this.value, cities);
+  // Loop over
+  const html = matchArray.map(place => {
+    // This regex matches the city or state name that is searched and replaces it with a span with a highlight class to give it a yellow background
+    const regex = new RegExp(this.value, 'gi');
+    const cityName = place.city.replace(regex, `<span class="hl">${this.value}</span>`);
+    const stateName = place.state.replace(regex, `<span class="hl">${this.value}</span>`);
+    // This return puts the results of what the person typed in into a list item with the city and state as well as the population
+    return `
+      <li>
+        <span class="name">${cityName}, ${stateName}</span>
+        <span class="population">${numberWithCommas(place.population)}</span>
+      </li>
+    `;
+  }).join(''); // Converts array with multiple items into one big string
+  // Returns the html variable created above and removes the filter for a city or a state text on the page
+  suggestions.innerHTML = html;
+}
+
+// We create variables to be able to select the inputs that we are working with. '.search' refers to the class of the search box and '.suggestions' refers to the ul
+const searchInput = document.querySelector('.search');
+const suggestions = document.querySelector('.suggestions');
+
+// Change event refers to anytime you click outside of the box
+searchInput.addEventListener('change', displayMatches);
+searchInput.addEventListener('keyup', displayMatches);
+
+
 </script>
   </body>
 </html>
